@@ -1,8 +1,0 @@
-{
-    "java.project.referencedLibraries": [
-        "lib/**/*.jar",
-        "libs/FastNoise-0.9.jar",
-        "libs/joml-1.10.8.jar"
-    ],
-    "java.project.exportJar.targetPath": "${workspaceFolder}/Server.jar"
-}
