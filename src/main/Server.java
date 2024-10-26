@@ -11,10 +11,17 @@ import engine.network.PlayerJoinPacket;
 public class Server {
     public List<ClientHandler> clients = new ArrayList<>();
     public List<PlayerJoinPacket> onlinePlayers = new ArrayList<>();
-    private int port = 500;
+    private static int port = 500;
     private int playerId = 0;
 
     public static void main(String[] args) {
+        if(args.length>0){
+            try{
+                port = Integer.parseInt(args[0]);
+            } finally {
+                System.out.println("set port to " + port);
+            }
+        }
         Server server = new Server();
         server.startServer();
     }
