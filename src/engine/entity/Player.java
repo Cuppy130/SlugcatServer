@@ -4,12 +4,8 @@ import gui.Color;
 
 public class Player extends Entity {
     private static final long serialVersionUID = 1L;
-    public float x;
-    public float y;
     public String name;
     public int level;
-    public int chunkX;
-    public int chunkY;
     public float speed;
     public int id;
     public byte[] inventory;
@@ -26,8 +22,6 @@ public class Player extends Entity {
             ", health=" + health +
             ", x=" + x +
             ", y=" + y +
-            ", chunkX=" + chunkX +
-            ", chunkY=" + chunkY +
             ", UUID=" + UUID.toString() +
             ", id=" + id +
             ", color=" + color +
