@@ -15,9 +15,6 @@ public class PlayerJoinPacket implements Serializable  {
     public int id;
     public Color color;
     public UUID UUID;
-    
     public float x, y;
-    public int cx, cy;
-
     public float speed;
 }

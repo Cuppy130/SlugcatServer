@@ -43,7 +43,7 @@ public class Serialize {
             int dataLength = byteBuffer.getInt();
     
             // Validate the length to ensure it's not absurdly large
-            if (dataLength < 0 || dataLength > 8192) {  // Assuming max object size is 8192 bytes
+            if (dataLength < 0 || dataLength > 1024*16) {  // Assuming max object size is 8192 bytes
                 System.err.println("Invalid data length: " + dataLength);
                 return null;
             }

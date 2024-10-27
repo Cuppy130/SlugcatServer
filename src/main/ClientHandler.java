@@ -112,7 +112,8 @@ public class ClientHandler implements Runnable {
                 try {
                     output.write(Serialize.serializeData(packet, GameplayPacket.PlayerJoined, whoAmI));
                     output.flush();
-                } catch (IOException e) {
+                    Thread.sleep(250);
+                } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
                 }
             }

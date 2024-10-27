@@ -7,4 +7,5 @@ public class Entity implements Serializable {
     public float y;
     public int health;
     public int maxHealth;
+    public boolean canAttack;
 }
