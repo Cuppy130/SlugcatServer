@@ -41,8 +41,8 @@ public class ClientHandler implements Runnable {
                 System.out.println("Received " + bytesRead + " bytes from client.");
                 byte[] decompressedData = decompressZstd(buffer, bytesRead);
                 
-                if (decompressedData != null) {
-                    System.out.println("Decompressed data: " + new String(decompressedData));
+                if (decompressedData == null) {
+                    return;
                 }
 
                 if(state == 0){
@@ -55,7 +55,13 @@ public class ClientHandler implements Runnable {
                         state = 1;
                     }
                 } else if(state == 1){
-                    System.err.println(bytesRead + " bytes recieved in gameplay!");
+                    int packetType = ByteBuffer.wrap(decompressedData).get();
+                    if(packetType==GameplayPacket.PlayerJoined){
+                        Server.broadcast(decompressedData);
+                    } else if(packetType == GameplayPacket.PlayerUpdate){
+                        Server.broadcast(decompressedData);
+                    }
+
                 }
             }
         } catch (IOException e) {

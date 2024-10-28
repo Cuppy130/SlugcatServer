@@ -9,7 +9,7 @@ import java.util.List;
 import engine.network.PlayerJoinPacket;
 
 public class Server {
-    public List<ClientHandler> clients = new ArrayList<>();
+    public static List<ClientHandler> clients = new ArrayList<>();
     public List<PlayerJoinPacket> onlinePlayers = new ArrayList<>();
     private static int PORT = 500;
     private static int playerId = 0;
@@ -43,7 +43,7 @@ public class Server {
         }
     }
 
-    public synchronized void broadcast(byte[] data) {
+    public synchronized static void broadcast(byte[] data) {
         for (ClientHandler client : clients) {
             client.sendZstd(data);
         }
