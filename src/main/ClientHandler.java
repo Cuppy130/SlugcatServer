@@ -36,7 +36,7 @@ public class ClientHandler implements Runnable {
 
         try {
             while ((bytesRead = input.read(buffer)) != -1) {
-                System.out.println("Received " + bytesRead + " bytes from client.");
+                // System.out.println("Received " + bytesRead + " bytes from client.");
                 byte[] decompressedData = decompressZstd(buffer, bytesRead);
                 
                 if (decompressedData == null) {
@@ -58,6 +58,7 @@ public class ClientHandler implements Runnable {
                         Server.broadcast(decompressedData);
                         PJP = (PlayerJoinPacket) Serialize.deserializeData(decompressedData);
                         Server.onlinePlayers.add(PJP);
+                        sendPlayerAllPlayers();
                     } else if(packetType == GameplayPacket.PlayerUpdate){
                         Server.broadcast(decompressedData);
                     }
@@ -76,6 +77,14 @@ public class ClientHandler implements Runnable {
             buffer2.put((byte)GameplayPacket.PlayerLeft);
             buffer2.putInt(whoAmI);
             Server.broadcast(buffer2.array());
+        }
+    }
+
+    private void sendPlayerAllPlayers() {
+        synchronized (Server.onlinePlayers){
+            for (PlayerJoinPacket player : Server.onlinePlayers) {
+                sendZstd(Serialize.serializeData(player, GameplayPacket.PlayerJoined, player.id));
+            }
         }
     }
 
