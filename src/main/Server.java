@@ -10,7 +10,7 @@ import engine.network.PlayerJoinPacket;
 
 public class Server {
     public static List<ClientHandler> clients = new ArrayList<>();
-    public List<PlayerJoinPacket> onlinePlayers = new ArrayList<>();
+    public static List<PlayerJoinPacket> onlinePlayers = new ArrayList<>();
     private static int PORT = 500;
     private static int playerId = 0;
     public static int BUFFER_SIZE = 1024*32; // 32KB buffer size

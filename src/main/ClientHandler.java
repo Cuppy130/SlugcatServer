@@ -58,6 +58,8 @@ public class ClientHandler implements Runnable {
                     int packetType = ByteBuffer.wrap(decompressedData).get();
                     if(packetType==GameplayPacket.PlayerJoined){
                         Server.broadcast(decompressedData);
+                        PJP = (PlayerJoinPacket) Serialize.deserializeData(decompressedData);
+                        Server.onlinePlayers.add(PJP);
                     } else if(packetType == GameplayPacket.PlayerUpdate){
                         Server.broadcast(decompressedData);
                     }
@@ -69,6 +71,13 @@ public class ClientHandler implements Runnable {
         } finally {
             closeConnection();
             server.clients.remove(this);
+            if(PJP!=null){
+                Server.onlinePlayers.remove(PJP);
+            }
+            ByteBuffer buffer2 = ByteBuffer.allocate(5);
+            buffer2.put((byte)GameplayPacket.PlayerLeft);
+            buffer2.putInt(whoAmI);
+            Server.broadcast(buffer2.array());
         }
     }
 
