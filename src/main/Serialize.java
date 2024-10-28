@@ -4,17 +4,13 @@ import java.nio.ByteBuffer;
 import java.io.*;
 
 public class Serialize {
-    // Method to serialize an object to a byte array
     public static byte[] serializeData(Object object, int packetType, int whoAmI) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-             ObjectOutputStream oos = new ObjectOutputStream(baos)) {
-    
-            // Serialize the object
+            ObjectOutputStream oos = new ObjectOutputStream(baos)) {
             oos.writeObject(object);
             oos.flush();
-            byte[] bytes = baos.toByteArray(); // Get the serialized data
+            byte[] bytes = baos.toByteArray();
     
-            // Create a ByteBuffer to hold the packet
             ByteBuffer buffer = ByteBuffer.allocate(1 + 4 + 4 + bytes.length); // 1 byte for packet type, 4 bytes for 'whoAmI', 4 bytes for length, serialized data
             buffer.put((byte) packetType);      // Packet type
             buffer.putInt(whoAmI);       // Player identifier
