@@ -9,80 +9,97 @@ import engine.network.PlayerJoinPacket;
 import types.ConnectionTypes;
 import types.GameplayPacket;
 
-
 public class ClientHandler implements Runnable {
     private Socket clientSocket;
     private InputStream input;
     private OutputStream output;
 
-    private int whoAmI = Server.getNewPlayerId();
+    private Server server;
+
+    private int whoAmI = server.getNewPlayerId();
     private int state = 0;
     private PlayerJoinPacket PJP;
 
-    public ClientHandler(Socket clientSocket) {
+    public ClientHandler(Socket clientSocket, Server server) {
+        this.server = server;
         this.clientSocket = clientSocket;
         try {
             input = clientSocket.getInputStream();
             output = clientSocket.getOutputStream();
         } catch (IOException e) {
             System.err.println("Error initializing client streams: " + e.getMessage());
+            disconnect();
         }
     }
 
     @Override
     public void run() {
-        byte[] buffer = new byte[Server.BUFFER_SIZE];
+        byte[] buffer = new byte[server.BUFFER_SIZE];
         int bytesRead;
 
         try {
             while ((bytesRead = input.read(buffer)) != -1) {
-                // System.out.println("Received " + bytesRead + " bytes from client.");
                 byte[] decompressedData = decompressZstd(buffer, bytesRead);
-                
+
                 if (decompressedData == null) {
-                    return;
+                    System.err.println("Decompression failed. Ending client session.");
+                    break;
                 }
 
-                if(state == 0){
-                    if(ByteBuffer.wrap(decompressedData).get()==ConnectionTypes.Request){
-                        System.err.println("player requested join");
-                        ByteBuffer data = ByteBuffer.allocate(5);
-                        data.put((byte)ConnectionTypes.Accepted);
-                        data.putInt(whoAmI);
-                        sendZstd(data.array());
-                        state = 1;
-                    }
-                } else if(state == 1){
-                    int packetType = ByteBuffer.wrap(decompressedData).get();
-                    if(packetType==GameplayPacket.PlayerJoined){
-                        Server.broadcast(decompressedData);
-                        PJP = (PlayerJoinPacket) Serialize.deserializeData(decompressedData);
-                        Server.onlinePlayers.add(PJP);
-                        sendPlayerAllPlayers();
-                    } else if(packetType == GameplayPacket.PlayerUpdate){
-                        Server.broadcast(decompressedData);
-                    }
-
-                }
+                handleClientData(decompressedData);
             }
         } catch (IOException e) {
             System.err.println("Error reading from client: " + e.getMessage());
         } finally {
-            closeConnection();
-            Server.clients.remove(this);
-            if(PJP!=null){
-                Server.onlinePlayers.remove(PJP);
-            }
-            ByteBuffer buffer2 = ByteBuffer.allocate(5);
-            buffer2.put((byte)GameplayPacket.PlayerLeft);
-            buffer2.putInt(whoAmI);
-            Server.broadcast(buffer2.array());
+            handleClientDisconnect();
         }
     }
 
+    private void handleClientData(byte[] decompressedData) {
+        ByteBuffer dataBuffer = ByteBuffer.wrap(decompressedData);
+
+        if (state == 0) {
+            if (dataBuffer.get() == ConnectionTypes.Request) {
+                System.err.println("Player requested join");
+
+                ByteBuffer responseData = ByteBuffer.allocate(5);
+                responseData.put((byte) ConnectionTypes.Accepted);
+                responseData.putInt(whoAmI);
+                sendZstd(responseData.array());
+                state = 1;
+            }
+        } else if (state == 1) {
+            int packetType = dataBuffer.get();
+
+            if (packetType == GameplayPacket.PlayerJoined) {
+                server.broadcast(decompressedData);
+                PJP = (PlayerJoinPacket) Serialize.deserializeData(decompressedData);
+                if (PJP != null) {
+                    server.onlinePlayers.add(PJP);
+                    sendPlayerAllPlayers();
+                }
+            } else if (packetType == GameplayPacket.PlayerUpdate) {
+                server.broadcast(decompressedData);
+            }
+        }
+    }
+
+    private void handleClientDisconnect() {
+        disconnect();
+        server.clients.remove(this);
+        if (PJP != null) {
+            server.onlinePlayers.remove(PJP);
+        }
+
+        ByteBuffer disconnectData = ByteBuffer.allocate(5);
+        disconnectData.put((byte) GameplayPacket.PlayerLeft);
+        disconnectData.putInt(whoAmI);
+        server.broadcast(disconnectData.array());
+    }
+
     private void sendPlayerAllPlayers() {
-        synchronized (Server.onlinePlayers){
-            for (PlayerJoinPacket player : Server.onlinePlayers) {
+        synchronized (server.onlinePlayers) {
+            for (PlayerJoinPacket player : server.onlinePlayers) {
                 sendZstd(Serialize.serializeData(player, GameplayPacket.PlayerJoined, player.id));
             }
         }
@@ -102,6 +119,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private byte[] decompressZstd(byte[] data, int length) {
         try {
             ByteBuffer buffer = ByteBuffer.wrap(data, 0, length);
@@ -109,7 +127,6 @@ public class ClientHandler implements Runnable {
             byte[] compressedData = new byte[compressedSize];
             buffer.get(compressedData);
 
-            @SuppressWarnings("deprecation")
             long decompressedSize = Zstd.decompressedSize(compressedData);
             byte[] decompressedData = new byte[(int) decompressedSize];
             Zstd.decompress(decompressedData, compressedData);
@@ -120,12 +137,11 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void closeConnection() {
+    private void disconnect() {
         try {
             if (input != null) input.close();
             if (output != null) output.close();
             if (clientSocket != null) clientSocket.close();
-            System.out.println("Client disconnected: " + clientSocket.getRemoteSocketAddress());
         } catch (IOException e) {
             System.err.println("Error closing client connection: " + e.getMessage());
         }

@@ -9,11 +9,11 @@ import java.util.List;
 import engine.network.PlayerJoinPacket;
 
 public class Server {
-    public static List<ClientHandler> clients = new ArrayList<>();
-    public static List<PlayerJoinPacket> onlinePlayers = new ArrayList<>();
+    public List<ClientHandler> clients = new ArrayList<>();
+    public List<PlayerJoinPacket> onlinePlayers = new ArrayList<>();
     private static int PORT = 500;
-    private static int playerId = 0;
-    public static int BUFFER_SIZE = 1024*32; // 32KB buffer size
+    private int playerId = 0;
+    public int BUFFER_SIZE = 1024*32; // 32KB buffer size
 
     public static void main(String[] args) {
         if(args.length>0){
@@ -34,7 +34,7 @@ public class Server {
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("New client connected: " + clientSocket.getRemoteSocketAddress());
-                ClientHandler clientHandler = new ClientHandler(clientSocket);
+                ClientHandler clientHandler = new ClientHandler(clientSocket, this);
                 clients.add(clientHandler);
                 new Thread(clientHandler).start();
             }
@@ -43,13 +43,13 @@ public class Server {
         }
     }
 
-    public synchronized static void broadcast(byte[] data) {
+    public synchronized void broadcast(byte[] data) {
         for (ClientHandler client : clients) {
             client.sendZstd(data);
         }
     }
 
-    public static int getNewPlayerId() {
+    public int getNewPlayerId() {
         playerId++;
         return playerId;
     }
