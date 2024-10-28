@@ -95,6 +95,9 @@ public class ClientHandler implements Runnable {
                         server.broadcast(buffer);
                     } else if (packetType == GameplayPacket.PlayerLeft){
                         onDisconnect();
+                    } else if (packetType == GameplayPacket.Chat){
+                        System.out.println("Chat message recieved, broadcasting... ("+bytesRead+" bytes)");
+                        server.broadcast(buffer);
                     }
                     
                 }
