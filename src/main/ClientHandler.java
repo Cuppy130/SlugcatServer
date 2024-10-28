@@ -12,7 +12,6 @@ import types.GameplayPacket;
 
 public class ClientHandler implements Runnable {
     private Socket clientSocket;
-    private Server server;
     private InputStream input;
     private OutputStream output;
 
@@ -20,9 +19,8 @@ public class ClientHandler implements Runnable {
     private int state = 0;
     private PlayerJoinPacket PJP;
 
-    public ClientHandler(Socket clientSocket, Server server) {
+    public ClientHandler(Socket clientSocket) {
         this.clientSocket = clientSocket;
-        this.server = server;
         try {
             input = clientSocket.getInputStream();
             output = clientSocket.getOutputStream();
@@ -70,7 +68,7 @@ public class ClientHandler implements Runnable {
             System.err.println("Error reading from client: " + e.getMessage());
         } finally {
             closeConnection();
-            server.clients.remove(this);
+            Server.clients.remove(this);
             if(PJP!=null){
                 Server.onlinePlayers.remove(PJP);
             }
