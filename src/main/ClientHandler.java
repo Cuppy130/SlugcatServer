@@ -16,13 +16,14 @@ public class ClientHandler implements Runnable {
 
     private Server server;
 
-    private int whoAmI = server.getNewPlayerId();
+    private int whoAmI;
     private int state = 0;
     private PlayerJoinPacket PJP;
 
     public ClientHandler(Socket clientSocket, Server server) {
-        this.server = server;
         this.clientSocket = clientSocket;
+        this.server = server;
+        this.whoAmI = server.getNewPlayerId();
         try {
             input = clientSocket.getInputStream();
             output = clientSocket.getOutputStream();

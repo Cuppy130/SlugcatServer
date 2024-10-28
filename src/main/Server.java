@@ -49,7 +49,7 @@ public class Server {
         }
     }
 
-    public int getNewPlayerId() {
+    public synchronized int getNewPlayerId() {
         playerId++;
         return playerId;
     }
