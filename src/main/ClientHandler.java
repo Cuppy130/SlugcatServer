@@ -15,7 +15,6 @@ public class ClientHandler implements Runnable {
     private OutputStream output;
 
     private Server server;
-
     private int whoAmI;
     private int state = 0;
     private PlayerJoinPacket PJP;
@@ -23,7 +22,8 @@ public class ClientHandler implements Runnable {
     public ClientHandler(Socket clientSocket, Server server) {
         this.clientSocket = clientSocket;
         this.server = server;
-        this.whoAmI = server.getNewPlayerId();
+        this.whoAmI = server.getNewPlayerId();  // Initialize whoAmI after server is set
+
         try {
             input = clientSocket.getInputStream();
             output = clientSocket.getOutputStream();
@@ -76,7 +76,9 @@ public class ClientHandler implements Runnable {
                 server.broadcast(decompressedData);
                 PJP = (PlayerJoinPacket) Serialize.deserializeData(decompressedData);
                 if (PJP != null) {
-                    server.onlinePlayers.add(PJP);
+                    synchronized (server.onlinePlayers) {
+                        server.onlinePlayers.add(PJP);
+                    }
                     sendPlayerAllPlayers();
                 }
             } else if (packetType == GameplayPacket.PlayerUpdate) {
@@ -86,17 +88,22 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleClientDisconnect() {
+        if (clientSocket.isClosed()) return;  // Check if already disconnected to prevent repeats
+    
         disconnect();
-        server.clients.remove(this);
-        if (PJP != null) {
-            server.onlinePlayers.remove(PJP);
+        server.removeClient(this);  // Remove client from the server list safely
+        synchronized (server.onlinePlayers) {
+            if (PJP != null) {
+                server.onlinePlayers.remove(PJP);
+            }
         }
-
+    
         ByteBuffer disconnectData = ByteBuffer.allocate(5);
         disconnectData.put((byte) GameplayPacket.PlayerLeft);
         disconnectData.putInt(whoAmI);
         server.broadcast(disconnectData.array());
     }
+    
 
     private void sendPlayerAllPlayers() {
         synchronized (server.onlinePlayers) {
@@ -146,5 +153,9 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             System.err.println("Error closing client connection: " + e.getMessage());
         }
+    }
+
+    public Socket getSocket() {
+        return clientSocket;
     }
 }
